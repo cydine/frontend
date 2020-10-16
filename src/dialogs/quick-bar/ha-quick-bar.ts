@@ -58,7 +58,7 @@ export class QuickBar extends LitElement {
 
   @query("search-input", false) private _filterInputField?: HTMLElement;
 
-  @query("mwc-list-item", false) private _firstListItem?: HTMLElement;
+  @query("mwc-list", false) private _list?: HTMLElement;
 
   public async showDialog(params: QuickBarParams) {
     this._commandMode = params.commandMode || false;
@@ -205,10 +205,25 @@ export class QuickBar extends LitElement {
 
   private _handleInputKeyDown(ev: KeyboardEvent) {
     if (ev.code === "Enter") {
-      this._firstListItem?.click();
+      // wait for debounce
+      setTimeout(() => {
+        if (!this._filteredItems?.length) {
+          return;
+        }
+        if (this._commandMode) {
+          this._runCommandAndCloseDialog(
+            this._filteredItems[0] as CommandItem,
+            0
+          );
+        } else {
+          this._launchMoreInfoDialog(
+            (this._filteredItems[0] as HassEntity).entity_id
+          );
+        }
+      }, 100);
     } else if (ev.code === "ArrowDown") {
       ev.preventDefault();
-      this._firstListItem?.focus();
+      this._list?.focus();
     }
   }
 
@@ -308,22 +323,14 @@ export class QuickBar extends LitElement {
     const index = ev.detail.index;
     const item = (ev.target as any).items[index].item;
 
-    this._commandTriggered = index;
-
-    this._runCommandAndCloseDialog({
-      domain: item.domain,
-      service: item.service,
-      serviceData: item.serviceData,
-    });
+    this._runCommandAndCloseDialog(item, index);
   }
 
-  private async _runCommandAndCloseDialog(request?: ServiceCallRequest) {
-    if (!request) {
-      return;
-    }
+  private async _runCommandAndCloseDialog(item: CommandItem, index: number) {
+    this._commandTriggered = index;
 
     this.hass
-      .callService(request.domain, request.service, request.serviceData)
+      .callService(item.domain, item.service, item.serviceData)
       .then(() => this.closeDialog());
   }
 
