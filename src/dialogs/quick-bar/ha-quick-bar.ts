@@ -28,7 +28,6 @@ import { SingleSelectedEvent } from "@material/mwc-list/mwc-list-foundation";
 import memoizeOne from "memoize-one";
 import "../../common/search/search-input";
 import { mdiConsoleLine } from "@mdi/js";
-import { debounce } from "../../common/util/debounce";
 import { scroll } from "lit-virtualizer";
 import { styleMap } from "lit-html/directives/style-map";
 
@@ -233,24 +232,16 @@ export class QuickBar extends LitElement {
 
     if (value.startsWith(">")) {
       this._commandMode = true;
-      this._debounceFilter(value.substring(1));
+      this._filter = value.substring(1);
     } else {
       this._commandMode = false;
-      this._debounceFilter(value);
+      this._filter = value;
     }
 
     if (oldCommandMode !== this._commandMode) {
       this._filteredItems = undefined;
     }
   }
-
-  private _debounceFilter = debounce(
-    (value: string) => {
-      this._filter = value;
-    },
-    100,
-    false
-  );
 
   private _handleListItemKeyDown(ev: KeyboardEvent) {
     const isSingleCharacter = ev.key.length === 1;
@@ -367,6 +358,10 @@ export class QuickBar extends LitElement {
             --dialog-surface-top: 40px;
             --mdc-dialog-max-height: calc(100% - 72px);
           }
+        }
+
+        ha-icon {
+          color: var(--secondary-text-color);
         }
 
         ha-svg-icon.prefix {
